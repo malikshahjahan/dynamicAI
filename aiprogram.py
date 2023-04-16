@@ -13,10 +13,11 @@ from sklearn.tree import DecisionTreeClassifier
 data = pd.read_csv('weather.csv')
 # convert nominal data to numeric
 from sklearn import preprocessing
+
 my_label = preprocessing.LabelEncoder()
-data[ 'Precip Type' ] = my_label.fit_transform(data[ 'Precip Type' ])
-print(data[ 'Precip Type' ].unique() )
-print(my_label.inverse_transform(data[ 'Precip Type' ].unique() ))
+data['Precip Type'] = my_label.fit_transform(data['Precip Type'])
+print(data['Precip Type'].unique())
+print(my_label.inverse_transform(data['Precip Type'].unique()))
 feature_names = ['Precip Type', 'Temperature (C)', 'Apparent Temperature (C)', 'Humidity',
                  'Wind Speed (km/h)', 'Wind Bearing (degrees)', 'Visibility (km)', 'Loud Cover',
                  'Pressure (millibars)']  # x variable names
@@ -97,13 +98,12 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # Spot Check Algorithms
-models = []
-models.append(('LR', LogisticRegression(solver='liblinear', multi_class='ovr')))
-models.append(('LDA', LinearDiscriminantAnalysis()))
-models.append(('KNN', KNeighborsClassifier()))
-models.append(('CART', DecisionTreeClassifier()))
-models.append(('NB', GaussianNB()))
-models.append(('SVM', SVC(gamma='auto')))
+models = [('LR', LogisticRegression(solver='liblinear', multi_class='ovr')),
+          ('LDA', LinearDiscriminantAnalysis()),
+          ('KNN', KNeighborsClassifier()),
+          ('CART', DecisionTreeClassifier()),
+          ('NB', GaussianNB()),
+          ('SVM', SVC(gamma='auto'))]
 # evaluate each model in turn
 results = []
 names = []
@@ -125,42 +125,54 @@ model.fit(X_train, y_train)
 predictions = model.predict(X_test)
 # Evaluate predictions
 print(accuracy_score(y_test, predictions))
-print(confusion_matrix(y_test, predictions))
+# print(confusion_matrix(y_test, predictions))
 print(classification_report(y_test, predictions))
 
+# ClassificationReport
+from yellowbrick.classifier import ClassificationReport
 
-# # Fitting into knn
-# from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-#
-# knn = KNeighborsClassifier(n_neighbors=5)  # setting up the KNN model to use 5NN
-# knn.fit(X_train_scaled, y_train)  # fitting the KNN
-# y_train_pred = knn.predict(X_train_scaled)
-#
-# # Plotting
-# import matplotlib.pyplot as plt
-#
-# error = []
-# for i in range(1, y_test.size):
-#     # knn = KNeighborsClassifier(n_neighbors=i)
-#     knn = KNeighborsRegressor(n_neighbors=i)
-#     knn.fit(X_test, y_test.ravel())
-#     pred_i = knn.predict(X_test)
-#     error.append(np.mean(pred_i != y_test))
-# print("Errors", error)
-# print("KNN Classification Graph (Predicted Data)")
-# plt.style.use('ggplot')
-# plt.subplots(figsize=(10, 6))
-# plt.plot(range(1, y_test.size), error, linestyle='dashed', color='blue', marker='o', markerfacecolor='red')
-# plt.xlabel('K-value')
-# plt.ylabel('Error Rate')
-# plt.title('Error Rate vs K-value')
-# plt.show()
-#
-# # Performance Assessment
-# print('Accuracy of K-NN classifier on training set: {:.2f}'.format(knn.score(X_train_scaled, y_train)))
-# print('Accuracy of K-NN classifier on test set: {:.2f}'.format(knn.score(X_test_scaled, y_test)))
-#
-# # # Prediction
-# test_data = [[0,9.472222222,7.388888889,0.89,14.1197,251,15.8263,0,1015.13]]
-# test_data_scaled = scaler.transform(test_data)
-# print('Predicted SEVERITY_LVL for test_data: ', test_data, ' is ', str(knn.predict(test_data_scaled)[0]))
+# viz = ClassificationReport(model, classes=np.unique(predictions), support="percent")    #good
+viz = ClassificationReport(model, classes=np.unique(predictions), ax=None,
+                           cmap='YlOrRd',
+                           support=None,
+                           encoder=None,
+                           is_fitted='auto',
+                           force_model=False,
+                           colorbar=True,
+                           fontsize=None)
+viz.fit(X_train, y_train)
+viz.score(X_test, y_test)
+viz.show()
+
+from yellowbrick.classifier import ConfusionMatrix
+
+cmPercent = ConfusionMatrix(
+    model, classes=np.unique(predictions),
+    percent=True
+    # label_encoder={0: 'Adelie', 1: 'Chinstrap', 2: 'Gentoo'}
+)
+cmVal = ConfusionMatrix(
+    model, classes=np.unique(predictions),
+    # label_encoder={0: 'Adelie', 1: 'Chinstrap', 2: 'Gentoo'}
+)
+cmPercent.fit(X_train, y_train)
+cmPercent.score(X_test, y_test)
+cmPercent.show()
+cmVal.fit(X_train, y_train)
+cmVal.score(X_test, y_test)
+cmVal.show()
+
+# ClassPredictionError
+from yellowbrick.classifier import ClassPredictionError
+
+visualizer = ClassPredictionError(model, classes=np.unique(predictions))
+visualizer.fit(X_train, y_train)
+visualizer.score(X_test, y_test)
+visualizer.show()
+
+# FeatureImportances
+from yellowbrick.model_selection import FeatureImportances
+
+visualizer = FeatureImportances(model)
+visualizer.fit(X_train, y_train)
+visualizer.show()
