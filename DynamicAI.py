@@ -121,7 +121,7 @@ pyplot.show()
 
 # Make predictions on validation dataset
 model = GaussianNB()
-model.fit(X_train.values, y_train)
+model.fit(X_train, y_train)
 predictions = model.predict(X_test)
 # Evaluate predictions
 print(accuracy_score(y_test, predictions))
@@ -129,20 +129,28 @@ print(accuracy_score(y_test, predictions))
 print(classification_report(y_test, predictions))
 
 # ClassificationReport
-from yellowbrick.classifier import ClassificationReport
+# from yellowbrick.classifier import ClassificationReport
 
-# viz = ClassificationReport(model, classes=np.unique(predictions), support="percent")    #good
-viz = ClassificationReport(model, classes=np.unique(predictions), ax=None,
-                           cmap='YlOrRd',
-                           support=None,
-                           encoder=None,
-                           is_fitted='auto',
-                           force_model=False,
-                           colorbar=True,
-                           fontsize=None)
-viz.fit(X_train, y_train)
-viz.score(X_test, y_test)
-viz.show()
+# # viz = ClassificationReport(model, classes=np.unique(predictions), support="percent")    #good
+# viz = ClassificationReport(model, classes=np.unique(predictions), ax=None,
+#                            cmap='YlOrRd',
+#                            support=None,
+#                            encoder=None,
+#                            is_fitted='auto',
+#                            force_model=False,
+#                            colorbar=True,
+#                            fontsize=None)
+# viz.fit(X_train, y_train)
+# viz.score(X_test, y_test)
+# viz.show()
+from IPython import display
+import matplotlib.pyplot as plt
+
+cr = classification_report(y_test, predictions, labels=np.unique(predictions), digits=4, output_dict=True)
+display.display(pd.DataFrame(cr))
+df = pd.DataFrame(cr)
+df.iloc[:3, :10].T.plot(kind='bar')
+plt.show()
 
 from yellowbrick.classifier import ConfusionMatrix
 
@@ -178,6 +186,6 @@ try:
     visualizer.show()
 except Exception as e:
     print(e)
-# export learned model
+
 import pickle
 pickle.dump(model, open('finalized_model.sav', 'wb'))
